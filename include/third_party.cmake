@@ -164,7 +164,7 @@ macro(find_3rd_party name)
       ExternalProject_Add(
         vigra-git
         GIT_REPOSITORY http://github.com/catsop/vigra.git
-        GIT_TAG 262d07eb7bca28b21bdcf9f971741c946a55fd5b
+        GIT_TAG f75721cd224a848cb9e35cd713da7fbacf3508ba
         UPDATE_COMMAND ""
         PATCH_COMMAND ""
         CMAKE_ARGS -DAUTOBUILD_TESTS:BOOL=OFF -DVIGRA_STATIC_LIB:BOOL=ON -DWITH_VIGRANUMPY:BOOL=OFF
