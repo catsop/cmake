@@ -28,6 +28,17 @@ macro(find_3rd_party name)
       message(STATUS "Boost *NOT* found.")
     endif()
 
+  elseif(module MATCHES "boost-test")
+
+    find_package(Boost 1.42 COMPONENTS unit_test_framework REQUIRED)
+    if(Boost_FOUND)
+      list(APPEND include_3rd_party ${Boost_INCLUDE_DIR})
+      list(APPEND link_3rd_party ${Boost_LIBRARIES})
+      message(STATUS "boost-test found.")
+    else()
+      message(STATUS "boost-test *NOT* found.")
+    endif()
+
   elseif(module MATCHES "boost-python")
 
     find_package(Boost 1.42 COMPONENTS python REQUIRED)
@@ -172,8 +183,8 @@ macro(find_3rd_party name)
       )
       ExternalProject_Get_Property(vigra-git SOURCE_DIR)
       ExternalProject_Get_Property(vigra-git BINARY_DIR)
-      set(Vigra_INCLUDE_DIR ${SOURCE_DIR}/include)
-      set(Vigra_LIBRARIES "${BINARY_DIR}/src/impex/libvigraimpex.a")
+      set(Vigra_INCLUDE_DIR ${SOURCE_DIR}/include CACHE INTERNAL "")
+      set(Vigra_LIBRARIES "${BINARY_DIR}/src/impex/libvigraimpex${CMAKE_SHARED_LIBRARY_SUFFIX}" CACHE INTERNAL "")
       list(APPEND include_3rd_party ${Vigra_INCLUDE_DIR})
       list(APPEND link_3rd_party ${Vigra_LIBRARIES})
       list(APPEND misc_targets vigra-git)
@@ -185,6 +196,10 @@ macro(find_3rd_party name)
       set(HAVE_VIGRA 1 CACHE INTERNAL "")
 
     endif()
+
+    list(APPEND include_3rd_party ${Vigra_INCLUDE_DIR})
+    list(APPEND link_3rd_party ${Vigra_LIBRARIES})
+    list(APPEND misc_targets vigra-git)
 
   elseif(module MATCHES "hdf5")
 
@@ -226,14 +241,15 @@ macro(find_3rd_party name)
       )
       ExternalProject_Get_Property(lemon-hg SOURCE_DIR)
       ExternalProject_Get_Property(lemon-hg BINARY_DIR)
-      set(LEMON_INCLUDE_DIRS ${SOURCE_DIR} ${BINARY_DIR})
-      set(LEMON_LIBRARIES "${BINARY_DIR}/lemon/libemon.a")
-      list(APPEND include_3rd_party ${LEMON_INCLUDE_DIRS})
-      list(APPEND link_3rd_party ${LEMON_LIBRARIES})
-      list(APPEND misc_targets lemon-hg)
+      set(LEMON_INCLUDE_DIRS ${SOURCE_DIR} ${BINARY_DIR} CACHE INTERNAL "")
+      set(LEMON_LIBRARIES "${BINARY_DIR}/lemon/libemon.a" CACHE INTERNAL "")
       set(HAVE_LEMON 1 CACHE INTERNAL "")
 
     endif()
+
+    list(APPEND include_3rd_party ${LEMON_INCLUDE_DIRS})
+    list(APPEND link_3rd_party ${LEMON_LIBRARIES})
+    list(APPEND misc_targets lemon-hg)
 
   elseif(module MATCHES "eigen-hg")
 
@@ -255,12 +271,13 @@ macro(find_3rd_party name)
       )
       ExternalProject_Get_Property(eigen-hg SOURCE_DIR)
       ExternalProject_Get_Property(eigen-hg BINARY_DIR)
-      set(EIGEN_INCLUDE_DIRS ${SOURCE_DIR})
-      list(APPEND include_3rd_party ${EIGEN_INCLUDE_DIRS})
-      list(APPEND misc_targets eigen-hg)
+      set(EIGEN_INCLUDE_DIRS ${SOURCE_DIR} CACHE INTERNAL "")
       set(HAVE_EIGEN 1 CACHE INTERNAL "")
 
     endif()
+
+    list(APPEND include_3rd_party ${EIGEN_INCLUDE_DIRS})
+    list(APPEND misc_targets eigen-hg)
 
   elseif(module MATCHES "^fftw$")
 
@@ -303,32 +320,38 @@ macro(find_3rd_party name)
 
   elseif(module MATCHES "skia")
 
-    find_package(Skia)
-    if (SKIA_FOUND)
-      message(STATUS "Skia found.")
-      set(HAVE_SKIA 1)
-    else()
-      message(STATUS "Skia not found -- will download and build it on demand.")
-      include(ExternalProject)
-      ExternalProject_Add(
-        skia
-        GIT_REPOSITORY gitolite@lego.slyip.net:fun/skia
-        GIT_TAG a8362292a0095f44c8f63d549a4cad05069d20e4
-        UPDATE_COMMAND ""
-        PATCH_COMMAND ""
-        INSTALL_COMMAND ""
-      )
-      ExternalProject_Get_Property(skia SOURCE_DIR)
-      set(Skia_INCLUDE_DIR ${SOURCE_DIR}/include)
-      set(Skia_LIBRARY ${SOURCE_DIR}/out/Release/libskia.a)
-      set(HAVE_SKIA 1)
-      set(OWN_SKIA 1)
+    # check if skia was already added as an external project
+    if (NOT TARGET skia)
+
+      find_package(Skia)
+      if (SKIA_FOUND)
+        message(STATUS "Skia found.")
+        set(HAVE_SKIA 1 CACHE INTERNAL "")
+      else()
+        message(STATUS "Skia not found -- will download and build it on demand.")
+        include(ExternalProject)
+        ExternalProject_Add(
+          skia
+          GIT_REPOSITORY gitolite@lego.slyip.net:fun/skia
+          GIT_TAG d489ba7
+          UPDATE_COMMAND ""
+          PATCH_COMMAND ""
+          INSTALL_COMMAND ""
+        )
+        ExternalProject_Get_Property(skia SOURCE_DIR)
+        set(Skia_INCLUDE_DIR ${SOURCE_DIR}/include CACHE INTERNAL "")
+        set(Skia_LIBRARY ${SOURCE_DIR}/libskia.a CACHE INTERNAL "")
+        set(HAVE_SKIA 1 CACHE INTERNAL "")
+        set(OWN_SKIA 1 CACHE INTERNAL "")
+      endif()
+
     endif()
+
     list(APPEND include_3rd_party ${Skia_INCLUDE_DIR}/config)
     list(APPEND include_3rd_party ${Skia_INCLUDE_DIR}/core)
     list(APPEND include_3rd_party ${Skia_INCLUDE_DIR}/effects)
     list(APPEND include_3rd_party ${Skia_INCLUDE_DIR}/pdf)
-    list(APPEND link_3rd_party ${Skia_LIBRARY})
+    list(APPEND link_3rd_party ${Skia_LIBRARY} pthread)
     list(APPEND misc_targets skia)
 
   elseif(module MATCHES "freetype")
